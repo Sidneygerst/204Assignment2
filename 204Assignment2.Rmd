@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r include = FALSE}
 ###load packages and data
 library(tidyverse)
 
@@ -20,7 +20,7 @@ Gas_Data <- read_csv("Gas_Data.csv")
 
 
 1. a. what is the aggregate daily demand curve?
-```{r}
+```{r include = FALSE }
 #plot of the data with a lm fit to it
 ggplot(Gas_Data)+
   geom_point(aes(x = Q_Low_Gallons_per_Day, y = Price_Dollars, color = "Low")) +
@@ -56,7 +56,7 @@ mec <- function(y) {
 }
 
 Q_agg <- function(x) {
-  22.71027063-6.62683E-05*x
+  22.7064632349-0.00006626828*x
 }
 
 #5=22.71027063-6.62683E-05*x
@@ -75,11 +75,104 @@ ggplot(data.frame(x = c(70000, 500000), y = c(0, 30)), aes(x = x, y = y)) +
   stat_function(fun = mec, geom = "line", color = "green") +
   stat_function(fun = Q_agg, geom = "line", color = "brown") +
   stat_function(fun = supply, geom = "line", color = "yellow") +
-  scale_x_continuous(expand = c(0,0), limits = c(70000,500000)) +
-  scale_y_continuous(expand = c(0,0), limits = c(0,20)) +
+  scale_x_continuous(expand = c(0,0), limits = c(0,500000)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
   xlab("Quantity (Gallons)") + 
   ylab("Price (Dollars)") +
   theme_bw()
+
+
+low_cs <- 1377761.43584
+
+high_cs <- 1611029.47484
+
+#Consumer Benefit Status Quo
+low_cs + high_cs #2988790.91068
+
+#Producer Benefit Status Quo
+#422620.964934
+
+
+#Environmental Cost
+#534412.56851
+
+
+
+
+
+```
+
+
+
+
+
+2. how is the current consumer benefit divided between "high" and "low" income consumers
+```{r}
+
+low_cs_fun <- function(y) {
+  2.66798225954
+}
+
+high_cs_fun <- function(y) {
+  2.94881364767
+}
+
+ggplot(data.frame(x = c(70000, 500000), y = c(0, 30)), aes(x = x, y = y)) + 
+  stat_function(fun = Q_low, geom = "area", fill = "red") + 
+  stat_function(fun = Q_high, geom = "area", fill = "blue", alpha = 0.5) +
+  stat_function(fun = high_cs_fun, geom = "line", color = "white") +
+  stat_function(fun = low_cs_fun, geom = "area", color = "white") +
+  stat_function(fun = mec, geom = "line", color = "green") +
+  stat_function(fun = Q_agg, geom = "line", color = "brown") +
+  stat_function(fun = supply, geom = "line", color = "yellow") +
+  scale_x_continuous(expand = c(0,0), limits = c(0,500000)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
+  xlab("Quantity (Gallons)") + 
+  ylab("Price (Dollars)") +
+  theme_bw()
+
+
+high_cs - low_cs #233268
+
+
+```
+
+High income has more benefit than low income by 233268 (UNITS?????)
+
+
+3. GAS TAX OF $0.50/GALLON
+```{r}
+
+#tax function supply + 0.50
+supply_tax <- function(x) {
+  0.50 + 0.000018709*x
+}
+
+quantity_tax <- 261277.714261
+
+price_tax <- 5.38824475611
+
+ggplot(data.frame(x = c(70000, 500000), y = c(0, 30)), aes(x = x, y = y)) + 
+  stat_function(fun = Q_low, geom = "line", color = "red") + 
+  stat_function(fun = Q_high, geom = "line", color = "blue") +
+  stat_function(fun = mec, geom = "line", color = "green") +
+  stat_function(fun = Q_agg, geom = "line", color = "brown") +
+  stat_function(fun = supply, geom = "line", color = "yellow") +
+  stat_function(fun = supply_tax, geom = "line", color = "orange") +
+  scale_x_continuous(expand = c(0,0), limits = c(0,500000)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
+  xlab("Quantity (Gallons)") + 
+  ylab("Price (Dollars)") +
+  theme_bw()
+
+
+low_cs_tax <- 1317487.94969
+
+high_cs_tax <- 1542892.95988
+
+total_ps_tax <- 409347.909631
+
+total_environmental_damage <- 522555.428522
 
 
 ```
