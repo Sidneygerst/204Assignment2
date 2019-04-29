@@ -117,22 +117,43 @@ high_cs_fun <- function(y) {
   2.94881364767
 }
 
+
+#q_test <- uniroot(function(x) Q_agg(x) - supply(x), range(x))$root
+  # Q aggregate = 267176.2 gallons
+
+q_t <-267176.2
+
+# Equilibrium price
+#p_test <- supply(q_test)
+  # P = $5
+z <- seq(0, q_t, 0.05)
+
+
+
+
 ggplot(data.frame(x = c(70000, 500000), y = c(0, 30)), aes(x = x, y = y)) + 
-  stat_function(fun = Q_low, geom = "area", fill = "red") + 
-  stat_function(fun = Q_high, geom = "area", fill = "blue", alpha = 0.5) +
-  stat_function(fun = high_cs_fun, geom = "line", color = "white") +
-  stat_function(fun = low_cs_fun, geom = "area", color = "white") +
-  stat_function(fun = mec, geom = "line", color = "green") +
-  stat_function(fun = Q_agg, geom = "line", color = "brown") +
-  stat_function(fun = supply, geom = "line", color = "yellow") +
+  stat_function(aes(x, color = "Low Gallons Demand"), fun = Q_low) + 
+  stat_function(aes(x, color = "High Gallons Demand"), fun = Q_high) +
+  stat_function(aes(x, color = "Marginal Externality Cost"), fun = mec) +
+  stat_function(aes(x, color = "Aggregate Demand"), fun = Q_agg) +
+  stat_function(aes(x, color = "Supply"),fun = supply) +
   scale_x_continuous(expand = c(0,0), limits = c(0,500000)) +
   scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
   xlab("Quantity (Gallons)") + 
   ylab("Price (Dollars)") +
-  theme_bw()
+  theme_bw()+
+  annotate("point", x = q_t, y = 5, color = "grey30") + 
+  annotate("segment", x = q_t, xend = q_t, y = 0, yend = 5, linetype = "dashed", color = "grey30") +
+  annotate("segment", x = 0, xend = q_t, y = 5, yend = 5,linetype = "dashed", color = "grey30") 
+  # geom_ribbon(aes(x = z, ymin = supply(z), ymax = 5,
+  #                 fill = "Producer Surplus"), alpha = 0.25) +
+  # geom_ribbon(aes(x = z, ymin = 5, ymax = Q_agg(z),
+  #                 fill = "Aggregate Consumer Surplus"), alpha = 0.25) +
+  # geom_ribbon(aes(x = z, ymin = 0, ymax = mec(z),
+  #                 fill = "Environmental Cost"), alpha = 0.25)
 
 
-high_cs - low_cs #233268
+#high_cs - low_cs #233268
 
 
 ```
@@ -153,27 +174,54 @@ quantity_tax <- 261277.714261
 price_tax <- 5.38824475611
 
 ggplot(data.frame(x = c(70000, 500000), y = c(0, 30)), aes(x = x, y = y)) + 
-  stat_function(fun = Q_low, geom = "line", color = "red") + 
-  stat_function(fun = Q_high, geom = "line", color = "blue") +
-  stat_function(fun = mec, geom = "line", color = "green") +
-  stat_function(fun = Q_agg, geom = "line", color = "brown") +
-  stat_function(fun = supply, geom = "line", color = "yellow") +
-  stat_function(fun = supply_tax, geom = "line", color = "orange") +
+  stat_function(aes(x, color = "Low Gallons Demand"), fun = Q_low) + 
+  stat_function(aes(x, color = "High Gallons Demand"), fun = Q_high) +
+  stat_function(aes(x, color = "Marginal Externality Cost"), fun = mec) +
+  stat_function(aes(x, color = "Aggregate Demand"), fun = Q_agg) +
+  stat_function(aes(x, color = "Supply"),fun = supply) +
+  stat_function(aes(x, color = "Supply Tax"), fun = supply_tax) +
   scale_x_continuous(expand = c(0,0), limits = c(0,500000)) +
   scale_y_continuous(expand = c(0,0), limits = c(0,25)) +
   xlab("Quantity (Gallons)") + 
   ylab("Price (Dollars)") +
-  theme_bw()
+  theme_bw()+
+  annotate("point", x = q_t, y = 5, color = "grey30") + 
+  annotate("segment", x = q_t, xend = q_t, y = 0, yend = 5, linetype = "dashed", color = "grey30") +
+  annotate("segment", x = 0, xend = q_t, y = 5, yend = 5,linetype = "dashed", color = "grey30")
 
 
 low_cs_tax <- 1317487.94969
 
 high_cs_tax <- 1542892.95988
 
-total_ps_tax <- 409347.909631
 
-total_environmental_damage <- 522555.428522
+#producer surplus
+#Step 1: Find new quantity. This is where the supply_tax curve intersects the demand agg
+q_t
+
+#Step 2: Find the price of this quantity ON THE ORIGINAL SUPPLY CURVE --> new height
+p_tax_agg <- supply(quantity_tax)
+
+
+#Step 3: Find the area of the producer surplus
+  #base = q_tax
+  # height = p_tax_agg
+ps_tax_50 <- .5*quantity_tax*p_tax_agg 
+
+total_ps_tax <- 638594.708312246
+
+#Environmental Damage
+
+total_environmental_damage <- 2*quantity_tax #522555.428522
+
+#Tax Revenue
+tax_revenue <- quantity_tax * (price_tax - p_tax_agg) #130638.857130749
+
+
 
 
 ```
 
+
+
+4. Revenue will be used for infrastructure repairs. ASSUME: low income consumers bear all environmental costs.
