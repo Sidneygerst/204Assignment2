@@ -12,6 +12,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r include = FALSE}
 ###load packages and data
 library(tidyverse)
+library(kableExtra)
+library(knitr)
 
 Gas_Data <- read_csv("Gas_Data.csv")
 
@@ -468,6 +470,9 @@ tax_table <- tax_scenarios %>%
   mutate(ps_tax = (ps_tax-ps_total)/ps_total) %>% 
   select(tax_amount, cs_low, high_cs, ps_tax)
 
+tax_table %>%
+  kable() %>%
+  kable_styling()
 
 ```
 
