@@ -225,3 +225,314 @@ tax_revenue <- quantity_tax * (price_tax - p_tax_agg) #130638.857130749
 
 
 4. Revenue will be used for infrastructure repairs. ASSUME: low income consumers bear all environmental costs.
+```{r}
+
+
+# Find demand curves using linear regression:
+
+demand_high <- lm(data = Gas_Data, Price_Dollars ~ Q_High_Gallons_per_Day)
+demand_low <- lm(data = Gas_Data, Price_Dollars ~ Q_Low_Gallons_per_Day)
+
+int_h <- demand_high$coefficients[1]
+q_high <- abs(demand_high$coefficients[2])
+
+int_l <- demand_low$coefficients[1]
+q_low <- abs(demand_low$coefficients[2])
+
+
+# Writing functions for demand:
+
+d_high <- function(q) {
+  int_h - (q_high*q)
+}
+
+d_low <- function(q) {
+  int_l - (q_low*q)
+}
+
+# Demand as a function of quantity add together for aggregate demand:
+
+d_highq <- function(p){
+  (int_h/q_high) - (p/q_high)
+}
+
+d_lowq <- function(p) {
+  (int_l/q_low) - (p/q_low)
+}
+
+
+# Find the slope and intercept for the aggregate demand:
+agg_int <- (int_h/q_high) + (int_l/q_low)
+agg_slope <- abs((-1/q_high) + (-1/q_low))
+
+# Write aggregate demand function as function of price:
+d_aggq <- function(p) {
+  agg_int - agg_slope*p
+}
+
+# Change to a function of quantity:
+d_agg <- function(q) {
+  (agg_int/agg_slope) - ((1/agg_slope)*q)
+}
+
+# Quantity at equilibrium price of 5: 
+q_sq <- d_highq(5) + d_lowq(5)
+
+# Find mpc by plugging in 5 for the AD curve:
+
+mpc_slope <- (5/q_sq)
+
+mpc <- function(q) {
+  mpc_slope*q
+}
+
+mec <- function(y) {
+  2
+}
+
+
+# CS for high demand - area under curve from 0 to quantity at price 5 - (quantity*5)
+q_high_sq <- d_highq(5)
+fullarea_high <- integrate(d_high, lower = 0, upper = q_high_sq)
+cost_high <- q_high_sq * 5
+cs_high <- fullarea_high$value - cost_high
+
+# CS for low demand - area under curve from 0 to quantity at price 5 - (quantity*5) 
+q_low_sq <- d_lowq(5)
+fullarea_low <- integrate(d_low, lower = 0, upper = q_low_sq)
+cost_low <- q_low_sq * 5
+cs_low <- fullarea_low$value - cost_low
+
+######## Consumer Surplus using integration 
+
+# First find quantity where agg demand starts - quantity where price is equal to intercept of d_low
+q_cshigh <- d_highq(int_l)
+
+# Integrate to find area under curve for the high demand through quantity where agg starts 
+area_high <- integrate(d_high, lower = 0, upper = q_cshigh)
+
+# Integrate agg demand from quantity it starts through the equilibrium quantity 
+area_agg <- integrate(d_agg, lower = q_cshigh, upper = q_sq)
+
+# Find total cost at equilibrium (price*quantity)
+cost <- 5*q_sq
+
+# Add integrals and subtract cost  
+cs_total <- (area_high$value + area_agg$value) - cost
+
+
+######### Producer Surplus using integration
+
+# Integrate MPC find the area under curve through equilibrium quantity 
+mpc_area <- integrate(mpc, lower = 0, upper = q_sq)
+
+# Find PS by subtracting area from cost 
+ps_total <- cost - mpc_area$value
+
+# If revenues are being used for infrastructure repairs that area becomes part of CS
+
+# Part that goes to low income consumers is (Qlow)/(total Q with tax) * Rev
+
+########## Generic functions for calculations assuming tax is placed on producers
+
+# Amount of the tax - create a vector that will find tax amounts in increments $0.25 from $0.25-$5
+tax_amount <- seq(0.25,5, by = 0.25)
+  
+#New MPC with the tax (intercept is equal to amount of the tax)
+mpc_tax <- function(q) {
+  tax_amount + mpc_slope*q
+}
+
+# Price at equilibrium (status quo)
+p_sq <- 5
+
+#Quantity with tax:
+q_tax <- ((agg_int/agg_slope)-tax_amount)/((1/agg_slope)+mpc_slope)
+
+#Price with tax:
+p_tax <- d_agg(q_tax)
+
+#Price of MPC with quantity of tax:
+p_mpc_tax <- mpc(q_tax)
+
+#Environmental cost of tax:
+tec_tax <- 2*q_tax
+
+# Total Revenue
+rev_tax <- tax_amount * q_tax
+
+```
+
+
+a. high cs
+```{r}
+
+# CShigh = [(area under curve from 0 to quantity with tax) - (price with tax *quantity with tax)] + Revenue for high income consumers
+
+q_high_tax <- d_highq(p_tax)
+
+# Revenue for High Income Consumers: 
+rev_highcon <- rev_tax * ((q_high_tax)/q_tax)
+
+# Define the integration function:
+
+area_h <- function(q) {
+  integrate(d_high, lower = 0, upper = q)$value
+}
+
+# Use sapply() to integrate to the quantity at each value of the tax:
+high_areas <- sapply(q_high_tax, area_h)
+
+# Cost:
+cost_high_tax <- q_high_tax * p_tax
+
+# Calculate CS:
+cs_high_tax <- (high_areas - cost_high_tax) + rev_highcon
+
+
+```
+
+b. low cs
+```{r}
+
+# CSlow = [(area under curve from 0 to quantity with tax) - (price with tax * quantity with tax)] + Rev for low income consumers - TEC with tax
+
+q_low_tax <- d_lowq(p_tax)
+
+# Revenue for Low Incoming Consumers:
+rev_lowcon <- rev_tax * ((q_low_tax)/q_tax)
+
+# Define the integration function:
+
+area_l <- function(q) {
+  integrate(d_low, lower = 0, upper = q)$value
+}
+
+# Use sapply() to integrate to the quantity at each value of the tax:
+low_areas <- sapply(q_low_tax, area_l)
+
+# Cost:
+cost_low_tax <- q_low_tax * p_tax
+
+# Calculate CS:
+cs_low_tax <- (low_areas - cost_low_tax) + rev_lowcon - tec_tax
+
+
+```
+
+c. ps
+```{r}
+
+# PS = [(price with tax * quantity with tax) - area under curve of MPC+tax through quantity with tax]
+
+# Define the integration function:
+
+area_p <- function(q){
+  integrate(mpc, lower = 0, upper = q)$value
+}
+
+# Use sapply() to integrate to the quantity at each value of the tax:
+prod_areas <- sapply(q_tax, area_p)
+
+# Cost using the original supply curve and price at MPC
+cost_tax <- q_tax * p_mpc_tax 
+
+#Calculate PS:
+ps_tax <- cost_tax - prod_areas
+
+```
+
+table
+```{r}
+
+# Bind the baseline to the amount of tax, CS high, CS low, and PS into a dataframe:
+
+tax_scenarios <- as.data.frame(cbind(tax_amount, cs_high_tax, cs_low_tax, ps_tax))
+
+
+# Graph them:
+
+taxes <- ggplot(tax_scenarios, aes(x = cs_high_tax, y = tax_amount)) +
+  geom_line()+
+  geom_line(aes(x=cs_low_tax, y = tax_amount)) + 
+  geom_line(aes(x=ps_tax, y = tax_amount)) + 
+  scale_x_continuous(limits = c(560000,1650000))
+
+# Graph is bad.... try table instead
+
+
+# Use percent change from the baseline
+tax_table <- tax_scenarios %>%
+  mutate(high_cs = (cs_high_tax-cs_high)/cs_high) %>% 
+  mutate(cs_low = (cs_low_tax-cs_low)/cs_low) %>% 
+  mutate(ps_tax = (ps_tax-ps_total)/ps_total) %>% 
+  select(tax_amount, cs_low, high_cs, ps_tax)
+
+
+```
+
+5. Electric Cars
+```{r}
+
+#Cut y-int by 2
+Q_high_electric <- function(x) {
+  11.6957209-0.0001297*x
+}
+
+Q_low_electric <- function(x) {
+  10.9954267-0.0001355*x
+}
+
+d_agg_electric <- function(x) {
+  11.3532316506-.00006626828*x
+}
+
+supply_electric_quantity <- -15090.174032*5+171322.241433
+
+supply_electric_slope <- 5/supply_electric_quantity
+
+supply_electric <- function(x){
+  supply_electric_slope*x
+}
+
+price_electric <- supply(supply_electric_quantity)
+#1.79
+
+#quantity high electric
+high_electric_quantity <- 64314.074522
+
+#quantity low electric
+low_electric_quantity <- 58594.3920796
+
+#environmental damage from gas
+q_envi_damage <- 141141.910588
+environmental_damage_electric <- 282283.821177
+
+ggplot(data.frame(x = c(70000, 500000), y = c(0, 30)), aes(x = x, y = y)) + 
+  stat_function(aes(x, color = "Low Gallons Demand"), fun = Q_low_electric) + 
+  stat_function(aes(x, color = "High Gallons Demand"), fun = Q_high_electric) +
+  stat_function(aes(x, color = "Marginal Externality Cost"), fun = mec) +
+  stat_function(aes(x, color = "Aggregate Demand"), fun = d_agg_electric) +
+  stat_function(aes(x, color = "Supply"),fun = supply_electric) +
+  scale_x_continuous(expand = c(0,0), limits = c(0,500000)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,13)) +
+  xlab("Quantity (Gallons)") + 
+  ylab("Price (Dollars)") +
+  theme_bw()
+
+
+```
+
+6. Tax or Electric?
+```{r}
+
+#Tax Environmental Damage: 522555.428522
+
+#Electrical Environmental Damage: 282283.821177
+
+#ELECTRIC WINS YALL
+
+
+
+```
+
